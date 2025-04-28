@@ -41,17 +41,19 @@ std::string algorithm_to_string(Algorithm algo) {
   case Algorithm::Prange:
     return "Prange";
   case Algorithm::Lee_Brickell:
-    return "Lee_Brickell";
+    return "Lee-Brickell";
   case Algorithm::Leon:
     return "Leon";
   case Algorithm::Stern:
     return "Stern";
   case Algorithm::Finiasz_Sendrier:
-    return "Finiasz_Sendrier";
+    return "Finiasz-Sendrier";
   case Algorithm::MMT:
     return "MMT";
   case Algorithm::BJMM:
     return "BJMM";
+  case Algorithm::Both_May:
+    return "Both-May";
     // Add more algorithms here as needed
   default:
     return "Unknown Algorithm";
@@ -648,6 +650,23 @@ Result isd_log_cost_classic_BJMM(const uint32_t n, const uint32_t k,
   return res;
 }
 
+Result isd_log_cost_classic_Both_May(const uint32_t n, const uint32_t k,
+                                     const uint32_t t) {
+  NTL::RR n_real = NTL::RR(n);
+  NTL::RR k_real = NTL::RR(k);
+  NTL::RR t_real = NTL::RR(t);
+  uint32_t r = n - k;
+  NTL::RR r_real = NTL::RR(r);
+
+  NTL::RR min_log_cost = n_real; // unreachable upper bound
+  NTL::RR log_cost;
+  std::optional<uint32_t> best_p, best_l, best_eps_1, best_eps_2;
+  uint32_t constrained_max_l, constrained_max_p;
+
+  NTL::RR cost_gje;
+  constrained_max_p = P_MAX_BJMM > t ? t : P_MAX_BJMM;
+}
+
 /***************************Quantum ISDs***************************************/
 
 const NTL::RR quantum_gauss_red_cost(const NTL::RR &n, const NTL::RR &k) {
@@ -799,7 +818,7 @@ double get_qc_red_factor_classic_log(const uint32_t qc_order, const uint32_t n0,
   case QCAttackType::KRA3:
     return log2(qc_order);
   case QCAttackType::MRA:
-    return log2(qc_order) / 2;
+    return log2(qc_order) / 2
   case QCAttackType::Plain:
     return 0;
   default:

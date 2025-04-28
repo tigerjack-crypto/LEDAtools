@@ -47,8 +47,8 @@ int handle_plain(const std::string args) {
     values.push_back(std::stoi(token));
   }
 
-  if (values.size() != 4) {
-    std::cerr << "Expected 4 comma-separated values, but got " << values.size()
+  if (values.size() != 5) {
+    std::cerr << "Expected 4 comma-separated values (n, k, t, is_quasi_cyclic, block_size), but got " << values.size()
               << std::endl;
     return 1;
   }
@@ -56,31 +56,37 @@ int handle_plain(const std::string args) {
   int n = values[0];
   int k = values[1];
   int t = values[2];
-  bool qc_block_size = values[3];
+  bool is_quasi_cyclic = values[3];
+  int qc_block_size = values[4];
+  std::cout << "Input params." <<  std::endl;
+  std::cout << "n: " << n << "; k: " << k << "; t: " << t << "; is_quasi_cyclic: " << is_quasi_cyclic << "; qc_block_size: " << qc_block_size << std::endl;
 
   for (int i = 0; i < static_cast<int>(Algorithm::Count); i++) {
     Algorithm algo = static_cast<Algorithm>(i);
     std::cout << "Algorithm " << algorithm_to_string(algo) << std::endl;
     Result current_c_res = c_isd_log_cost(n, k, t, qc_block_size,
-                                          QCAttackType::Plain, false, {algo});
+                                          QCAttackType::Plain, is_quasi_cyclic, {algo});
     std::cout << "Plain " << std::endl;
     std::cout << result_to_string(current_c_res) << std::endl;
 
-    double red_fac;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::MRA);
-    std::cout << "Classic MRA: " << current_c_res.value - red_fac << std::endl;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA1);
-    std::cout << "Classic KRA1: " << current_c_res.value - red_fac << std::endl;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA2);
-    std::cout << "Classic KRA2: " << current_c_res.value - red_fac << std::endl;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA3);
-    std::cout << "Classic KRA3: " << current_c_res.value - red_fac << std::endl;
+    if (is_quasi_cyclic) {
+	std::cout << "QC speed-ups" << std::endl;
+        double red_fac;
+        red_fac =
+            get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::MRA);
+        std::cout << "Classic MRA: " << current_c_res.value - red_fac << std::endl;
+        red_fac =
+            get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA1);
+        std::cout << "Classic KRA1: " << current_c_res.value - red_fac << std::endl;
+        red_fac =
+            get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA2);
+        std::cout << "Classic KRA2: " << current_c_res.value - red_fac << std::endl;
+        red_fac =
+            get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA3);
+        std::cout << "Classic KRA3: " << current_c_res.value - red_fac << std::endl;
 
-    std::cout << "**********" << std::endl;
+        std::cout << "**********" << std::endl;
+    }
   }
 
   for (int i = 0; i < static_cast<int>(QuantumAlgorithm::Count); i++) {
@@ -172,8 +178,8 @@ int handle_json(std::string json_filename) {
       ++skipped_count;
       continue;
     }
-#pragma omp critical
-    std::cout << "Processing " << filename << std::endl;
+    // #pragma omp critical
+    //     std::cout << "Processing " << filename << std::endl;
     // uint32_t qc_block_size = entry["prime"];
     uint32_t qc_block_size = r;
 
@@ -184,7 +190,7 @@ int handle_json(std::string json_filename) {
 
     current_c_res = c_isd_log_cost(
         n, k, t, qc_block_size, QCAttackType::Plain, false,
-        std::unordered_set<Algorithm>{Algorithm::Prange, Algorithm::Stern});
+        std::unordered_set<Algorithm>{Algorithm::Stern});
 
     current_q_res = q_isd_log_cost(
         n, k, t, qc_block_size, QCAttackType::Plain, false,
@@ -199,21 +205,26 @@ int handle_json(std::string json_filename) {
     // if (n0 == 0) {
     //   // It's a value with rate < .5; it happens for KRA2 attacks
     //   double red_fac =
-    //       get_qc_red_factor_quantum_log(qc_block_size, n0, QCAttackType::MRA);
+    //       get_qc_red_factor_quantum_log(qc_block_size, n0,
+    //       QCAttackType::MRA);
     //   out_values["Quantum"]["MRA"] = current_q_res.value - red_fac;
 
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::MRA);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::MRA);
     //   out_values["Classic"]["MRA"] = current_c_res.value - red_fac;
 
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::KRA1);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::KRA1);
     //   out_values["Classic"]["KRA1"] = current_c_res.value - red_fac;
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::KRA2);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::KRA2);
     //   out_values["Classic"]["KRA2"] = current_c_res.value - red_fac;
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::KRA3);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::KRA3);
     //   out_values["Classic"]["KRA3"] = current_c_res.value - red_fac;
     // }
 

@@ -29,6 +29,7 @@ enum class Algorithm {
   Finiasz_Sendrier,
   MMT,
   BJMM,
+  Both_May,
   // Add more algorithms here
   Count,
 };
@@ -77,6 +78,8 @@ Result isd_log_cost_classic_BJMM_approx(const uint32_t n, const uint32_t k,
 Result isd_log_cost_classic_BJMM(const uint32_t n, const uint32_t k,
                                  const uint32_t t);
 
+Result isd_log_cost_classic_BothMay(const uint32_t n, const uint32_t k,
+                                 const uint32_t t);
 // Quantum
 Result q_isd_log_cost(const uint32_t n, const uint32_t k, const uint32_t t,
                       const uint32_t qc_order, QCAttackType attack,
