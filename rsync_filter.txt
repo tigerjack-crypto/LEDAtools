@@ -1,0 +1,49 @@
+# Exclude build artifacts
+- build/
+- bin/
+- obj/
+- *.o
+- *.a
+- *.so
+- *.so.*
+- *.d
+- *.out
+- *.exe
+- CMakeFiles/
+- CMakeCache.txt
+- cmake_install.cmake
+- Makefile
+- compile_commands.json
+
+# Exclude IDE/project files
+- .vscode/
+- .idea/
+- *.code-workspace
+
+# Exclude version control metadata
+- .git/
+- .hg/
+- .svn/
+
+# Exclude editor temp files
+- *~
+- \#*\#
+- *.swp
+- *.swo
+
+# Exclude logs and temporary files
+- *.log
+- tmp/
+- temp/
+
+# Exclude test output
+- Testing/
+- test-results/
+- *.gcno
+- *.gcda
+- *.gcov
+
+# Exclude Conan/Vcpkg/CMake package artifacts (optional, remove if used intentionally)
+- .conan/
+- vcpkg_installed/
+
