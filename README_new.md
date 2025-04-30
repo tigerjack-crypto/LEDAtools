@@ -19,9 +19,9 @@ All the output tools, that is, executables to use
 
 * Compile
 To create the binaries (inside the local `bin` directory)
-Inside `build`
 
 ```sh
+mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX=.. ..
 make install -j
 ```
