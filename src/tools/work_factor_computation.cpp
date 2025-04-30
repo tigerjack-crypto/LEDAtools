@@ -102,7 +102,7 @@ int handle_plain(const std::string args) {
   return 0;
 }
 
-int handle_json(std::string json_filename) {
+int handle_json(std::string json_filename, std::string suffixDir) {
   // const std::string input_isd_values = "out/isd_values.json";
   std::ifstream file(json_filename);
 
@@ -118,7 +118,8 @@ int handle_json(std::string json_filename) {
 
   int no_values = j.size();
   std::cout << "Number of values in the JSON: " << no_values << std::endl;
-  std::filesystem::path dirPath(OUT_DIR_RESULTS);
+  std::filesystem::path dirPath =
+      std::filesystem::path(OUT_DIR_RESULTS) / suffixDir;
   // Check if the directory exists
   if (!std::filesystem::exists(dirPath)) {
     // Try to create the directory, including parent directories
@@ -182,9 +183,9 @@ int handle_json(std::string json_filename) {
     Result current_c_res;
     Result current_q_res;
 
-    current_c_res = c_isd_log_cost(
-        n, k, t, qc_block_size, QCAttackType::Plain, false,
-        std::unordered_set<Algorithm>{Algorithm::BJMM});
+    current_c_res =
+        c_isd_log_cost(n, k, t, qc_block_size, QCAttackType::Plain, false,
+                       std::unordered_set<Algorithm>{Algorithm::BJMM});
 
     current_q_res = q_isd_log_cost(
         n, k, t, qc_block_size, QCAttackType::Plain, false,
@@ -199,21 +200,26 @@ int handle_json(std::string json_filename) {
     // if (n0 == 0) {
     //   // It's a value with rate < .5; it happens for KRA2 attacks
     //   double red_fac =
-    //       get_qc_red_factor_quantum_log(qc_block_size, n0, QCAttackType::MRA);
+    //       get_qc_red_factor_quantum_log(qc_block_size, n0,
+    //       QCAttackType::MRA);
     //   out_values["Quantum"]["MRA"] = current_q_res.value - red_fac;
 
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::MRA);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::MRA);
     //   out_values["Classic"]["MRA"] = current_c_res.value - red_fac;
 
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::KRA1);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::KRA1);
     //   out_values["Classic"]["KRA1"] = current_c_res.value - red_fac;
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::KRA2);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::KRA2);
     //   out_values["Classic"]["KRA2"] = current_c_res.value - red_fac;
     //   red_fac =
-    //       get_qc_red_factor_classic_log(qc_block_size, n0, QCAttackType::KRA3);
+    //       get_qc_red_factor_classic_log(qc_block_size, n0,
+    //       QCAttackType::KRA3);
     //   out_values["Classic"]["KRA3"] = current_c_res.value - red_fac;
     // }
 
@@ -246,9 +252,9 @@ int main(int argc, char *argv[]) {
   //     "binomials", spdlog::level::info, spdlog::level::debug);
   // Logger::LoggerManager::getInstance().setup_logger(
   //     "isd_cost_estimate", spdlog::level::info, spdlog::level::debug);
-  if (argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " --json [filename] | --plain [args]"
-              << std::endl;
+  if (argc != 5) {
+    std::cerr << "Usage: " << argv[0] << " [--json [filename] | --plain [args]]"
+              << "--out [suffix_path]" << std::endl;
     return 1;
   }
 
@@ -258,15 +264,19 @@ int main(int argc, char *argv[]) {
 
   if (strcmp(argv[1], "--json") == 0) {
     std::string json_filename = argv[2];
-    handle_json(json_filename);
+    std::string suffixDir;
+    if (strcmp(argv[3], "--out") == 0) {
+      std::string suffixDir = argv[4];
+      handle_json(json_filename, suffixDir);
+    } else {
+      std::cerr << "Unknown argument: " << argv[3] << std::endl;
+      return 1;
+    }
   } else if (strcmp(argv[1], "--plain") == 0) {
     std::string plainArgs = argv[2];
     handle_plain(plainArgs);
   } else {
     std::cerr << "Unknown argument: " << argv[1] << std::endl;
-    std::cerr << "Usage: " << argv[0]
-              << " --json [filename]" // "| --csv [filename]"
-              << std::endl;
     return 1;
   }
   return 0;
