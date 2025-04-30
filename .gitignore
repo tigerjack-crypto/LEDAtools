@@ -1,4 +1,7 @@
 # MINE
+GTAGS
+GRTAGS
+GPATH
 bin/
 build/
 
