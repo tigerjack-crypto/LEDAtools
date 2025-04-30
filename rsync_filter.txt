@@ -1,4 +1,8 @@
+# Mine
+- out/
+
 # Exclude build artifacts
+- .ccls-cache
 - build/
 - bin/
 - obj/
