@@ -184,7 +184,7 @@ int handle_json(std::string json_filename) {
 
     current_c_res = c_isd_log_cost(
         n, k, t, qc_block_size, QCAttackType::Plain, false,
-        std::unordered_set<Algorithm>{Algorithm::Prange, Algorithm::Stern});
+        std::unordered_set<Algorithm>{Algorithm::BJMM});
 
     current_q_res = q_isd_log_cost(
         n, k, t, qc_block_size, QCAttackType::Plain, false,
