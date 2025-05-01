@@ -164,8 +164,8 @@ int handle_json(std::string json_filename, std::string suffixDir) {
     uint32_t k = n - r;
     uint32_t t = entry["t"];
 
-    std::string filename =
-        OUT_DIR_RESULTS + fmt::format("{:06}_{:06}_{:03}.json", n, k, t);
+    std::string filename = OUT_DIR_RESULTS + "/" + suffixDir +
+                           fmt::format("{:06}_{:06}_{:03}.json", n, k, t);
     // Check if the generated file exists
     if (std::filesystem::exists(filename)) {
       // std::cout << "Generated file exists: " << filename << std::endl
