@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 struct Result {
@@ -31,6 +32,16 @@ enum class Algorithm {
   BJMM,
   // Add more algorithms here
   Count,
+};
+
+const std::unordered_map<std::string, Algorithm> algorithm_map = {
+    {"Prange", Algorithm::Prange},
+    {"Lee_Brickell", Algorithm::Lee_Brickell},
+    {"Leon", Algorithm::Leon},
+    {"Stern", Algorithm::Stern},
+    {"Finiasz_Sendrier", Algorithm::Finiasz_Sendrier},
+    {"MMT", Algorithm::MMT},
+    {"BJMM", Algorithm::BJMM},
 };
 
 std::string algorithm_to_string(Algorithm algo);
