@@ -160,12 +160,14 @@ int handle_json(std::string json_filename, std::string suffixDir) {
     }
 
     uint32_t n = entry["n"];
-    uint32_t r = entry["r"];
-    uint32_t k = n - r;
-    uint32_t t = entry["t"];
+    // uint32_t r = entry["r"];
+    // uint32_t k = n - r;
+    uint32_t k = entry["k"];
+    uint32_t r = n - k;
+    uint32_t w = entry["w"];
 
     std::string filename = OUT_DIR_RESULTS + "/" + suffixDir + "/" +
-                           fmt::format("{:06}_{:06}_{:03}.json", n, k, t);
+                           fmt::format("{:06}_{:06}_{:03}.json", n, k, w);
     // Check if the generated file exists
     if (std::filesystem::exists(filename)) {
       // std::cout << "Generated file exists: " << filename << std::endl
@@ -173,7 +175,7 @@ int handle_json(std::string json_filename, std::string suffixDir) {
       ++skipped_count;
       continue;
     }
-#pragma omp critical
+    // #pragma omp critical
     // std::cout << "Processing " << filename << std::endl;
     // uint32_t qc_block_size = entry["prime"];
     uint32_t qc_block_size = r;
@@ -184,11 +186,11 @@ int handle_json(std::string json_filename, std::string suffixDir) {
     Result current_q_res;
 
     current_c_res =
-        c_isd_log_cost(n, k, t, qc_block_size, QCAttackType::Plain, false,
-                       std::unordered_set<Algorithm>{Algorithm::BJMM});
+        c_isd_log_cost(n, k, w, qc_block_size, QCAttackType::Plain, false,
+                       std::unordered_set<Algorithm>{Algorithm::Stern});
 
     current_q_res = q_isd_log_cost(
-        n, k, t, qc_block_size, QCAttackType::Plain, false,
+        n, k, w, qc_block_size, QCAttackType::Plain, false,
         std::unordered_set<QuantumAlgorithm>{QuantumAlgorithm::Q_Lee_Brickell});
 
     std::string attack_type;
