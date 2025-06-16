@@ -19,8 +19,8 @@
 
 set -o nounset                              # Treat unset variables as an error
 PROJECT=LEDAtools
-PROJECT_ROOT=/mnt/internal/LinuxData/vc/crypto
-SERVER=alphonseasproxy
+PROJECT_ROOT="$MDIR_LINUX_DATA"/vc/crypto
+SERVER=$1
 
 rsync -avz --info=progress2 \
   --filter="merge $PROJECT_ROOT/$PROJECT/rsync_filter.txt" \
