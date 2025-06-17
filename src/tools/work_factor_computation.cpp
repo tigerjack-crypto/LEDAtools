@@ -102,7 +102,7 @@ int handle_plain(const std::string args) {
   return 0;
 }
 
-int handle_json(std::string json_filename, std::string suffixDir) {
+int handle_json(std::string json_filename, std::string outDir) {
   // const std::string input_isd_values = "out/isd_values.json";
   std::ifstream file(json_filename);
 
@@ -119,15 +119,15 @@ int handle_json(std::string json_filename, std::string suffixDir) {
   int no_values = j.size();
   std::cout << "Number of values in the JSON: " << no_values << std::endl;
   std::filesystem::path dirPath =
-      std::filesystem::path(OUT_DIR_RESULTS) / suffixDir;
+    std::filesystem::path(outDir);
   // Check if the directory exists
   if (!std::filesystem::exists(dirPath)) {
     // Try to create the directory, including parent directories
     if (std::filesystem::create_directories(dirPath)) {
-      std::cout << "Directory created successfully: " << OUT_DIR_RESULTS
+      std::cout << "Directory created successfully: " << outDir
                 << std::endl;
     } else {
-      std::cerr << "Failed to create directory: " << OUT_DIR_RESULTS
+      std::cerr << "Failed to create directory: " << outDir
                 << std::endl;
       return 1; // Return an error code
     }
@@ -166,7 +166,7 @@ int handle_json(std::string json_filename, std::string suffixDir) {
     uint32_t r = n - k;
     uint32_t w = entry["w"];
 
-    std::string filename = OUT_DIR_RESULTS + "/" + suffixDir + "/" +
+    std::string filename = outDir +
                            fmt::format("{:06}_{:06}_{:03}.json", n, k, w);
     // Check if the generated file exists
     if (std::filesystem::exists(filename)) {
@@ -254,9 +254,9 @@ int main(int argc, char *argv[]) {
   //     "binomials", spdlog::level::info, spdlog::level::debug);
   // Logger::LoggerManager::getInstance().setup_logger(
   //     "isd_cost_estimate", spdlog::level::info, spdlog::level::debug);
-  if (argc != 5) {
+  if (argc != 7) {
     std::cerr << "Usage: " << argv[0] << " [--json [filename] | --plain [args]]"
-              << "--out [suffix_path]" << std::endl;
+              << "--out-dir [out-dir]" << "--out [suffix_path]" << std::endl;
     return 1;
   }
 
@@ -264,16 +264,18 @@ int main(int argc, char *argv[]) {
   InitBinomials();
   pi = NTL::ComputePi_RR();
 
+
   if (strcmp(argv[1], "--json") == 0) {
     std::string json_filename = argv[2];
-    std::string suffixDir;
-    if (strcmp(argv[3], "--out") == 0) {
-      std::string suffixDir = argv[4];
-      handle_json(json_filename, suffixDir);
-    } else {
-      std::cerr << "Unknown argument: " << argv[3] << std::endl;
-      return 1;
-    }
+    // std::string suffixDir;
+    // if (strcmp(argv[5], "--out") == 0) {
+    std::string outDirResults = argv[4];
+    std::string suffixDir = argv[6];
+    handle_json(json_filename, outDirResults + "/" + suffixDir + "/");
+    // } else {
+    //   std::cerr << "Unknown argument: " << argv[5] << std::endl;
+    //   return 1;
+    // }
   } else if (strcmp(argv[1], "--plain") == 0) {
     std::string plainArgs = argv[2];
     handle_plain(plainArgs);
