@@ -39,6 +39,24 @@ void from_json(const nlohmann::json &j, Result &r) {
   j.at("gje_cost").get_to(r.gje_cost);
 }
 
+std::unordered_set<Algorithm> parse_algorithms(const std::string& input) {
+  std::unordered_set<Algorithm> selected_algorithms;
+  std::stringstream ss(input);
+  std::string token;
+
+  while (std::getline(ss, token, ',')) {
+    auto it = algorithm_map.find(token);
+    if (it != algorithm_map.end()) {
+      selected_algorithms.insert(it->second);
+    } else {
+      std::cerr << "Unknown algorithm: " << token << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  return selected_algorithms;
+}
+
 int handle_plain(const std::string args) {
   std::istringstream argStream(args);
   std::string token;
@@ -102,8 +120,7 @@ int handle_plain(const std::string args) {
   return 0;
 }
 
-int handle_json(std::string json_filename, std::string outDir) {
-  // const std::string input_isd_values = "out/isd_values.json";
+int handle_json(std::string json_filename, std::unordered_set<Algorithm> alg_list, std::string outDir) {
   std::ifstream file(json_filename);
 
   // Check if the file is open
@@ -187,7 +204,7 @@ int handle_json(std::string json_filename, std::string outDir) {
 
     current_c_res =
         c_isd_log_cost(n, k, w, qc_block_size, QCAttackType::Plain, false,
-                       std::unordered_set<Algorithm>{Algorithm::Stern});
+                       alg_list);
 
     current_q_res = q_isd_log_cost(
         n, k, w, qc_block_size, QCAttackType::Plain, false,
@@ -254,9 +271,27 @@ int main(int argc, char *argv[]) {
   //     "binomials", spdlog::level::info, spdlog::level::debug);
   // Logger::LoggerManager::getInstance().setup_logger(
   //     "isd_cost_estimate", spdlog::level::info, spdlog::level::debug);
-  if (argc != 7) {
-    std::cerr << "Usage: " << argv[0] << " [--json [filename] | --plain [args]]"
-              << "--out-dir [out-dir]" << "--out [suffix_path]" << std::endl;
+  if (argc != 9) {
+    std::cerr << "Usage: " << argv[0]
+              << " [--json filename | --plain args] "
+              << "--algorithms alg1,alg2 "
+              << "--out-dir dir "
+              << "--out suffix_path" << std::endl;
+    return 1;
+  }
+
+  std::string mode = argv[1];
+  std::string mode_arg = argv[2];
+  std::string alg_flag = argv[3];
+  std::string alg_list = argv[4];
+  std::string outdir_flag = argv[5];
+  std::string out_dir = argv[6];
+  std::string out_flag = argv[7];
+  std::string suffix = argv[8];
+
+
+  if (alg_flag != "--algorithms" || outdir_flag != "--out-dir" || out_flag != "--out") {
+    std::cerr << "Invalid arguments. See usage." << std::endl;
     return 1;
   }
 
@@ -264,24 +299,16 @@ int main(int argc, char *argv[]) {
   InitBinomials();
   pi = NTL::ComputePi_RR();
 
+  auto algorithms = parse_algorithms(alg_list);
 
-  if (strcmp(argv[1], "--json") == 0) {
-    std::string json_filename = argv[2];
-    // std::string suffixDir;
-    // if (strcmp(argv[5], "--out") == 0) {
-    std::string outDirResults = argv[4];
-    std::string suffixDir = argv[6];
-    handle_json(json_filename, outDirResults + "/" + suffixDir + "/");
-    // } else {
-    //   std::cerr << "Unknown argument: " << argv[5] << std::endl;
-    //   return 1;
-    // }
-  } else if (strcmp(argv[1], "--plain") == 0) {
-    std::string plainArgs = argv[2];
-    handle_plain(plainArgs);
+  if (mode == "--json") {
+    std::string output_path = out_dir + "/" + suffix + "/";
+    handle_json(mode_arg, algorithms, output_path);
+  } else if (mode == "--plain") {
+    // TODO not fully specified
+    handle_plain(mode_arg);
   } else {
-    std::cerr << "Unknown argument: " << argv[1] << std::endl;
+    std::cerr << "Error: Unknown mode: " << mode << ". Use --json or --plain." << std::endl;
     return 1;
   }
-  return 0;
 }
