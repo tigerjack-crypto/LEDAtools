@@ -76,22 +76,14 @@ std::unordered_set<QuantumAlgorithm> parse_quantum_algorithms(const std::string&
   return selected_algorithms;
 }
 
-std::unordered_set<QCAttackType> parse_qc_attack_type(const std::string& input) {
-  std::unordered_set<QCAttackType> selected_qc_attacks;
-  std::stringstream ss(input);
-  std::string token;
-
-  while (std::getline(ss, token, ',')) {
-    auto it = qc_attack_type_map.find(token);
-    if (it != qc_attack_type_map.end()) {
-      selected_qc_attacks.insert(it->second);
-    } else {
-      std::cerr << "Unknown algorithm: " << token << std::endl;
-      exit(EXIT_FAILURE);
-    }
+QCAttackType parse_qc_attack_type(const std::string& input) {
+  auto it = qc_attack_type_map.find(input);
+  if (it != qc_attack_type_map.end()) {
+    return it->second;
+  } else {
+    std::cerr << "Unknown QC attack type: " << input << std::endl;
+    exit(EXIT_FAILURE);
   }
-
-  return selected_qc_attacks;
 }
 
 int handle_plain(const std::string args) {
@@ -157,7 +149,10 @@ int handle_plain(const std::string args) {
   return 0;
 }
 
-int handle_json(std::string json_filename, std::unordered_set<Algorithm> alg_list, std::unordered_set<QuantumAlgorithm> q_alg_list, std::string outDir) {
+int handle_json(std::string json_filename, std::unordered_set<Algorithm> alg_list,
+                std::unordered_set<QuantumAlgorithm> q_alg_list,
+                QCAttackType qc_attack_type,
+                std::string outDir) {
   std::ifstream file(json_filename);
 
   // Check if the file is open
@@ -241,16 +236,16 @@ int handle_json(std::string json_filename, std::unordered_set<Algorithm> alg_lis
 
     if (!alg_list.empty()){
       current_c_res =
-        c_isd_log_cost(n, k, w, qc_block_size, QCAttackType::Plain, false,
+        c_isd_log_cost(n, k, w, qc_block_size, qc_attack_type, false,
                        alg_list);
-      out_values["Classic"]["Plain"] = current_c_res;
+      out_values["Classic"] = current_c_res;
     }
 
     if (!q_alg_list.empty()){
       current_q_res = q_isd_log_cost(
-                                     n, k, w, qc_block_size, QCAttackType::Plain, false,
-                                     std::unordered_set<QuantumAlgorithm>{QuantumAlgorithm::Q_Lee_Brickell});
-      out_values["Quantum"]["Plain"] = current_q_res;
+                                     n, k, w, qc_block_size, qc_attack_type, false,
+                                     q_alg_list);
+      out_values["Quantum"] = current_q_res;
     }
 
     // std::string attack_type;
@@ -312,7 +307,7 @@ int main(int argc, char *argv[]) {
   //     "binomials", spdlog::level::info, spdlog::level::debug);
   // Logger::LoggerManager::getInstance().setup_logger(
   //     "isd_cost_estimate", spdlog::level::info, spdlog::level::debug);
-  std::string json_file, plain_args, alg_list, quantum_alg_list, qc_attack_type_list;
+  std::string json_file, plain_args, alg_list_s, quantum_alg_list_s, qc_attack_type_s;
   std::string out_dir, out_suffix;
   bool json_mode = false, plain_mode = false;
 
@@ -321,7 +316,7 @@ int main(int argc, char *argv[]) {
     {"plain", required_argument, 0, 'p'},
     {"algorithms", required_argument, 0, 'a'},
     {"quantum-algorithms", required_argument, 0, 'q'},
-    {"qc-attack-types", required_argument, 0, 't'},
+    {"qc-attack-type", required_argument, 0, 't'},
     {"out-dir", required_argument, 0, 'd'},
     {"out", required_argument, 0, 'o'},
     {0, 0, 0, 0}
@@ -333,9 +328,9 @@ int main(int argc, char *argv[]) {
     switch (c) {
     case 'j': json_file = optarg; json_mode = true; break;
     case 'p': plain_args = optarg; plain_mode = true; break;
-    case 'a': alg_list = optarg; break;
-    case 'q': quantum_alg_list = optarg; break;
-    case 't': qc_attack_type_list = optarg; break;
+    case 'a': alg_list_s = optarg; break;
+    case 'q': quantum_alg_list_s = optarg; break;
+    case 't': qc_attack_type_s = optarg; break;
     case 'd': out_dir = optarg; break;
     case 'o': out_suffix = optarg; break;
     case '?': return 1;
@@ -347,19 +342,19 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (qc_attack_type_list.empty() || out_dir.empty() || out_suffix.empty()) {
+  if (qc_attack_type_s.empty() || out_dir.empty() || out_suffix.empty()) {
     std::cerr << "Error: --qc-attack-type, --out-dir, and --out are required.\n";
     return 1;
   }
 
-  if (alg_list.empty() && quantum_alg_list.empty()) {
+  if (alg_list_s.empty() && quantum_alg_list_s.empty()) {
     std::cerr << "Error: At least one of --algorithms or --quantum-algorithms must be provided.\n";
     return 1;
   }
 
-  auto algorithms = parse_algorithms(alg_list);
-  auto qalgorithms = parse_quantum_algorithms(quantum_alg_list);
-  auto qc_attacks = parse_qc_attack_type(qc_attack_type_list);
+  auto algorithms = parse_algorithms(alg_list_s);
+  auto qalgorithms = parse_quantum_algorithms(quantum_alg_list_s);
+  auto qc_attack = parse_qc_attack_type(qc_attack_type_s);
 
   NTL::RR::SetPrecision(NUM_BITS_REAL_MANTISSA);
   InitBinomials();
@@ -367,7 +362,7 @@ int main(int argc, char *argv[]) {
 
   if (json_mode) {
     std::string output_path = out_dir + "/" + out_suffix + "/";
-    handle_json(json_file, algorithms, qalgorithms, output_path);
+    handle_json(json_file, algorithms, qalgorithms, qc_attack, output_path);
   } else if (plain_mode) {
     // TODO not fully tested
     handle_plain(plain_args);
