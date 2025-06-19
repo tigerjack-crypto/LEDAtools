@@ -695,6 +695,7 @@ Result isd_log_cost_quantum_LB(const uint32_t n, const uint32_t k,
   // LOGGER->info("Quantum LB time: {}", NTL::conv<double>(min_log_cost));
   Result res;
   res.alg_name = "Quantum Lee-Brickell";
+  res.gje_cost = NTL::conv<double>(NTL::log(quantum_gauss_red_cost(n_real, k_real)) / NTL::log(NTL::RR(2)));
   res.params = {{"p", best_p.value()}};
   res.value = NTL::conv<double>(min_log_cost);
   return res;
