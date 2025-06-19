@@ -57,6 +57,42 @@ std::unordered_set<Algorithm> parse_algorithms(const std::string& input) {
   return selected_algorithms;
 }
 
+std::unordered_set<QuantumAlgorithm> parse_quantum_algorithms(const std::string& input) {
+  std::unordered_set<QuantumAlgorithm> selected_algorithms;
+  std::stringstream ss(input);
+  std::string token;
+
+  while (std::getline(ss, token, ',')) {
+    auto it = quantum_algorithm_map.find(token);
+    if (it != quantum_algorithm_map.end()) {
+      selected_algorithms.insert(it->second);
+    } else {
+      std::cerr << "Unknown algorithm: " << token << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  return selected_algorithms;
+}
+
+std::unordered_set<QCAttackType> parse_qc_attack_type(const std::string& input) {
+  std::unordered_set<QCAttackType> selected_qc_attacks;
+  std::stringstream ss(input);
+  std::string token;
+
+  while (std::getline(ss, token, ',')) {
+    auto it = qc_attack_type_map.find(token);
+    if (it != qc_attack_type_map.end()) {
+      selected_qc_attacks.insert(it->second);
+    } else {
+      std::cerr << "Unknown algorithm: " << token << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  return selected_qc_attacks;
+}
+
 int handle_plain(const std::string args) {
   std::istringstream argStream(args);
   std::string token;
@@ -120,7 +156,7 @@ int handle_plain(const std::string args) {
   return 0;
 }
 
-int handle_json(std::string json_filename, std::unordered_set<Algorithm> alg_list, std::string outDir) {
+int handle_json(std::string json_filename, std::unordered_set<Algorithm> alg_list, std::unordered_set<QuantumAlgorithm> q_alg_list, std::string outDir) {
   std::ifstream file(json_filename);
 
   // Check if the file is open
@@ -202,17 +238,21 @@ int handle_json(std::string json_filename, std::unordered_set<Algorithm> alg_lis
     Result current_c_res;
     Result current_q_res;
 
-    current_c_res =
+    if (!alg_list.empty()){
+      current_c_res =
         c_isd_log_cost(n, k, w, qc_block_size, QCAttackType::Plain, false,
                        alg_list);
+      out_values["Classic"]["Plain"] = current_c_res;
+    }
 
-    current_q_res = q_isd_log_cost(
-        n, k, w, qc_block_size, QCAttackType::Plain, false,
-        std::unordered_set<QuantumAlgorithm>{QuantumAlgorithm::Q_Lee_Brickell});
+    if (!q_alg_list.empty()){
+      current_q_res = q_isd_log_cost(
+                                     n, k, w, qc_block_size, QCAttackType::Plain, false,
+                                     std::unordered_set<QuantumAlgorithm>{QuantumAlgorithm::Q_Lee_Brickell});
+      out_values["Quantum"]["Plain"] = current_q_res;
+    }
 
-    std::string attack_type;
-    out_values["Classic"]["Plain"] = current_c_res;
-    out_values["Quantum"]["Plain"] = current_q_res;
+    // std::string attack_type;
 
     // Post-apply reduction factors
     // uint32_t n0 = n / r;
@@ -271,10 +311,12 @@ int main(int argc, char *argv[]) {
   //     "binomials", spdlog::level::info, spdlog::level::debug);
   // Logger::LoggerManager::getInstance().setup_logger(
   //     "isd_cost_estimate", spdlog::level::info, spdlog::level::debug);
-  if (argc != 9) {
+  if (argc != 13) {
     std::cerr << "Usage: " << argv[0]
               << " [--json filename | --plain args] "
               << "--algorithms alg1,alg2 "
+              << "--quantum-algorithms alg1,alg2 "
+              << "--qc-attack-type type"
               << "--out-dir dir "
               << "--out suffix_path" << std::endl;
     return 1;
@@ -284,13 +326,19 @@ int main(int argc, char *argv[]) {
   std::string mode_arg = argv[2];
   std::string alg_flag = argv[3];
   std::string alg_list = argv[4];
-  std::string outdir_flag = argv[5];
-  std::string out_dir = argv[6];
-  std::string out_flag = argv[7];
-  std::string suffix = argv[8];
+  std::string qalg_flag = argv[5];
+  std::string qalg_list = argv[6];
+  std::string qc_attack_type_flag = argv[7];
+  std::string qc_attack_type_list = argv[8];
+  std::string outdir_flag = argv[9];
+  std::string out_dir = argv[10];
+  std::string out_flag = argv[11];
+  std::string suffix = argv[12];
 
 
-  if (alg_flag != "--algorithms" || outdir_flag != "--out-dir" || out_flag != "--out") {
+  if (alg_flag != "--algorithms" || qalg_flag != "--quantum-algorithms" ||
+      qc_attack_type_flag != "--qc-attack-type" || outdir_flag != "--out-dir" ||
+      out_flag != "--out") {
     std::cerr << "Invalid arguments. See usage." << std::endl;
     return 1;
   }
@@ -300,10 +348,12 @@ int main(int argc, char *argv[]) {
   pi = NTL::ComputePi_RR();
 
   auto algorithms = parse_algorithms(alg_list);
+  auto qalgorithms = parse_quantum_algorithms(qalg_list);
+  auto qc_attacks = parse_qc_attack_type(qc_attack_type_list);
 
   if (mode == "--json") {
     std::string output_path = out_dir + "/" + suffix + "/";
-    handle_json(mode_arg, algorithms, output_path);
+    handle_json(mode_arg, algorithms, qalgorithms, output_path);
   } else if (mode == "--plain") {
     // TODO not fully specified
     handle_plain(mode_arg);
