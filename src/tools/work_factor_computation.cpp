@@ -5,6 +5,7 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <getopt.h>
 #include <iomanip> // For std::setprecision
 #include <iostream>
 #include <isd_cost_estimate.hpp>
@@ -311,54 +312,67 @@ int main(int argc, char *argv[]) {
   //     "binomials", spdlog::level::info, spdlog::level::debug);
   // Logger::LoggerManager::getInstance().setup_logger(
   //     "isd_cost_estimate", spdlog::level::info, spdlog::level::debug);
-  if (argc != 13) {
-    std::cerr << "Usage: " << argv[0]
-              << " [--json filename | --plain args] "
-              << "--algorithms alg1,alg2 "
-              << "--quantum-algorithms alg1,alg2 "
-              << "--qc-attack-type type"
-              << "--out-dir dir "
-              << "--out suffix_path" << std::endl;
+  std::string json_file, plain_args, alg_list, quantum_alg_list, qc_attack_type_list;
+  std::string out_dir, out_suffix;
+  bool json_mode = false, plain_mode = false;
+
+  static struct option long_options[] = {
+    {"json", required_argument, 0, 'j'},
+    {"plain", required_argument, 0, 'p'},
+    {"algorithms", required_argument, 0, 'a'},
+    {"quantum-algorithms", required_argument, 0, 'q'},
+    {"qc-attack-types", required_argument, 0, 't'},
+    {"out-dir", required_argument, 0, 'd'},
+    {"out", required_argument, 0, 'o'},
+    {0, 0, 0, 0}
+  };
+
+  int option_index = 0;
+  int c;
+  while ((c = getopt_long(argc, argv, "j:p:a:q:t:d:o:", long_options, &option_index)) != -1) {
+    switch (c) {
+    case 'j': json_file = optarg; json_mode = true; break;
+    case 'p': plain_args = optarg; plain_mode = true; break;
+    case 'a': alg_list = optarg; break;
+    case 'q': quantum_alg_list = optarg; break;
+    case 't': qc_attack_type_list = optarg; break;
+    case 'd': out_dir = optarg; break;
+    case 'o': out_suffix = optarg; break;
+    case '?': return 1;
+    }
+  }
+
+  if (json_mode == plain_mode) {
+    std::cerr << "Error: Specify exactly one of --json or --plain.\n";
     return 1;
   }
 
-  std::string mode = argv[1];
-  std::string mode_arg = argv[2];
-  std::string alg_flag = argv[3];
-  std::string alg_list = argv[4];
-  std::string qalg_flag = argv[5];
-  std::string qalg_list = argv[6];
-  std::string qc_attack_type_flag = argv[7];
-  std::string qc_attack_type_list = argv[8];
-  std::string outdir_flag = argv[9];
-  std::string out_dir = argv[10];
-  std::string out_flag = argv[11];
-  std::string suffix = argv[12];
-
-
-  if (alg_flag != "--algorithms" || qalg_flag != "--quantum-algorithms" ||
-      qc_attack_type_flag != "--qc-attack-type" || outdir_flag != "--out-dir" ||
-      out_flag != "--out") {
-    std::cerr << "Invalid arguments. See usage." << std::endl;
+  if (qc_attack_type_list.empty() || out_dir.empty() || out_suffix.empty()) {
+    std::cerr << "Error: --qc-attack-type, --out-dir, and --out are required.\n";
     return 1;
   }
+
+  if (alg_list.empty() && quantum_alg_list.empty()) {
+    std::cerr << "Error: At least one of --algorithms or --quantum-algorithms must be provided.\n";
+    return 1;
+  }
+
+  auto algorithms = parse_algorithms(alg_list);
+  auto qalgorithms = parse_quantum_algorithms(quantum_alg_list);
+  auto qc_attacks = parse_qc_attack_type(qc_attack_type_list);
 
   NTL::RR::SetPrecision(NUM_BITS_REAL_MANTISSA);
   InitBinomials();
   pi = NTL::ComputePi_RR();
 
-  auto algorithms = parse_algorithms(alg_list);
-  auto qalgorithms = parse_quantum_algorithms(qalg_list);
-  auto qc_attacks = parse_qc_attack_type(qc_attack_type_list);
-
-  if (mode == "--json") {
-    std::string output_path = out_dir + "/" + suffix + "/";
-    handle_json(mode_arg, algorithms, qalgorithms, output_path);
-  } else if (mode == "--plain") {
-    // TODO not fully specified
-    handle_plain(mode_arg);
+  if (json_mode) {
+    std::string output_path = out_dir + "/" + out_suffix + "/";
+    handle_json(json_file, algorithms, qalgorithms, output_path);
+  } else if (plain_mode) {
+    // TODO not fully tested
+    handle_plain(plain_args);
   } else {
-    std::cerr << "Error: Unknown mode: " << mode << ". Use --json or --plain." << std::endl;
+    std::cerr << "Error: Unknown mode. Use either --json or --plain." << std::endl;
     return 1;
   }
 }
