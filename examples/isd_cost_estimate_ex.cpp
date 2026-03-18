@@ -4,7 +4,7 @@
 #include <isd_cost_estimate.hpp>
 #include <map>
 #include <ostream>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
 
