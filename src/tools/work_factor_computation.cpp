@@ -103,7 +103,7 @@ int handle_plain(const std::string args) {
   int n = values[0];
   int k = values[1];
   int t = values[2];
-  bool qc_block_size = values[3];
+  int qc_block_size = values[3];
 
   for (int i = 0; i < static_cast<int>(Algorithm::Count); i++) {
     Algorithm algo = static_cast<Algorithm>(i);
@@ -114,17 +114,17 @@ int handle_plain(const std::string args) {
     std::cout << result_to_string(current_c_res) << std::endl;
 
     double red_fac;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::MRA);
+    red_fac = qc_block_size>1 ?
+        get_qc_red_factor_classic_log(qc_block_size, n / qc_block_size, QCAttackType::MRA) : 0;
     std::cout << "Classic MRA: " << current_c_res.value - red_fac << std::endl;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA1);
+    red_fac = qc_block_size>1 ?
+        get_qc_red_factor_classic_log(qc_block_size, n / qc_block_size, QCAttackType::KRA1) : 0;
     std::cout << "Classic KRA1: " << current_c_res.value - red_fac << std::endl;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA2);
+    red_fac = qc_block_size>1 ?
+        get_qc_red_factor_classic_log(qc_block_size, n / qc_block_size, QCAttackType::KRA2) : 0;
     std::cout << "Classic KRA2: " << current_c_res.value - red_fac << std::endl;
-    red_fac =
-        get_qc_red_factor_classic_log(qc_block_size, n - k, QCAttackType::KRA3);
+    red_fac = qc_block_size>1 ?
+        get_qc_red_factor_classic_log(qc_block_size, n / qc_block_size, QCAttackType::KRA3) : 0;
     std::cout << "Classic KRA3: " << current_c_res.value - red_fac << std::endl;
 
     std::cout << "**********" << std::endl;
@@ -142,8 +142,8 @@ int handle_plain(const std::string args) {
     std::cout << result_to_string(current_q_res) << std::endl;
 
     double red_fac;
-    red_fac =
-        get_qc_red_factor_quantum_log(qc_block_size, n - k, QCAttackType::MRA);
+    red_fac = qc_block_size>1 ?
+        get_qc_red_factor_quantum_log(qc_block_size, n / qc_block_size, QCAttackType::MRA) : 0;
     std::cout << "Quantum MRA: " << current_q_res.value - red_fac << std::endl;
   }
   return 0;

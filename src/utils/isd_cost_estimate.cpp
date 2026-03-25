@@ -796,7 +796,7 @@ double get_qc_red_factor_classic_log(const uint32_t qc_order, const uint32_t n0,
   case QCAttackType::KRA1:
     return log2(qc_order) + log2(NTL::conv<int>(binomial_wrapper(n0, 2)));
   case QCAttackType::KRA2:
-    return log2(qc_order) + log2(n0);
+    return log2(qc_order); // + log2(n0);
   case QCAttackType::KRA3:
     return log2(qc_order);
   case QCAttackType::MRA:
